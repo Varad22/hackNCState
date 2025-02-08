@@ -1,7 +1,13 @@
 from flask import jsonify, request
+from flask.cli import load_dotenv
 from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
 
-MONGO_URI= "mongodb+srv://apchoudh:apchoudh@cluster0.dlweo96.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+load_dotenv()
+username = os.getenv("USERNAME")
+password = os.getenv("PASSWORD")
+MONGO_URI= f"mongodb+srv://{username}:{password}@cluster0.dlweo96.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)
 
 def connectDB():
