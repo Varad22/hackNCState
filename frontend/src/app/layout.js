@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Button } from "@/components/ui/button";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,9 +21,21 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900`}
       >
-        {children}
+        {/* Header */}
+        <header className="flex justify-between items-center p-4 border-b bg-white shadow-md">
+          <h1 className="text-xl font-bold">My App</h1>
+          <Button variant="outline">Sign In</Button>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-grow">{children}</main>
+
+        {/* Footer */}
+        <footer className="p-4 text-center border-t bg-gray-100">
+          &copy; {new Date().getFullYear()} My App. All rights reserved.
+        </footer>
       </body>
     </html>
   );
