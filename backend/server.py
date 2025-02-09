@@ -7,6 +7,8 @@ import schedule
 import time
 import threading
 from flask_mail import Mail, Message
+from bs4 import BeautifulSoup
+import joblib
 import openai
 from chatgpt import menu, categorize_menu, generate_summary
 
@@ -19,8 +21,8 @@ app.config["MAIL_USE_SSL"] = False  # Must be False for TLS
 app.config["MAIL_USERNAME"] = "varadjs22@gmail.com"  # Your Gmail address
 app.config["MAIL_PASSWORD"] = "egsl ayev bbld bhrn"  # Use a Google App Password, NOT your real password
 app.config["MAIL_DEFAULT_SENDER"] = "varadjs22@gmail.com"
+mail = Mail(app)
 
- 
 db.connectDB()
 
 collection_dh = "dining_halls"
@@ -69,6 +71,24 @@ def vendor_update_inventory():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/predict",methods=["POST", "GET"])
+def predict():
+    try:
+        # data = request.get_json()
+        match_location_NC = [1,0,0,1]
+        is_weekend = [1,1,0,0]
+        
+        # Load the trained model
+        model = joblib.load('optimized_model.pkl')
+        predictions=[]
+        # Make prediction
+        for i in range(len(is_weekend)):
+            prediction = model.predict([[match_location_NC[i], is_weekend[i]]])[0]
+            predictions.append(prediction)
+        return jsonify({"predicted_total_boxes": predictions})
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 @app.route("/employee/update_inventory", methods=["POST"])
 def employee_update_inventory():
