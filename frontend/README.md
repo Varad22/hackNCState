@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🌟 **Pack The Feed – Frontend**
 
-## Getting Started
+This is the frontend for **Pack The Feed**, a platform dedicated to redistributing surplus food from dining halls to those in need. Built with **Next.js**, **React**, and **TailwindCSS**, it provides a seamless user experience with real-time updates and a modern UI.
 
-First, run the development server:
+---
 
+## 🚀 **Getting Started**
+
+### **1️⃣ Clone the Repository**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repo-url>
+cd frontend
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### **2️⃣ Install Dependencies**
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### **3️⃣ Run the Development Server**
+```bash
+npm run dev
+```
+The app will be available at **`http://localhost:3000`**.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🏗 **Project Structure**
+```
+frontend/
+│── public/               # Static assets (images, icons)
+│── src/
+│   ├── components/       # Reusable UI components
+│   ├── pages/            # Next.js pages
+│   ├── styles/           # Tailwind & global styles
+│   ├── lib/              # API functions & utilities
+│── .eslintrc.json        # Linting configuration
+│── tailwind.config.js    # TailwindCSS configuration
+│── next.config.js        # Next.js configuration
+│── package.json          # Project dependencies & scripts
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📦 **Dependencies**
+### **Frontend Libraries**
+- **`next`** – React framework for SSR & routing
+- **`react` & `react-dom`** – Core React dependencies
+- **`next-themes`** – Theme switching (dark mode support)
+- **`tailwindcss`** – Utility-first CSS framework
+- **`framer-motion`** – Smooth animations & transitions
+- **`leaflet`** & **`react-leaflet`** – Interactive maps
+- **`lucide-react`** – Modern SVG icons
+- **`react-mouse-particles`** – Animated mouse effects
+- **`clsx`** & **`tailwind-merge`** – Utility class merging
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### **UI & State Management**
+- **`@radix-ui/react-dialog`** – Accessible modal/dialog components
+- **`@radix-ui/react-slot`** – Slot components for composition
 
-## Deploy on Vercel
+### **Development Tools**
+- **`eslint`** & **`eslint-config-next`** – Code linting
+- **`postcss`** – CSS processing
+- **`tailwindcss-animate`** – Extra animations for Tailwind
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🎨 **Styling & UI**
+The project uses **TailwindCSS** for styling, ensuring flexibility and consistency. Animations are powered by **Framer Motion** and **tailwindcss-animate**.
+
+---
+
+## 🔗 **Backend Proxy**
+The frontend is configured to communicate with the **Flask** backend via:
+```json
+"proxy": "http://localhost:5000"
+```
+Ensure the backend is running before testing API-dependent features.
+
+---
+
+## 🛠 **Building for Production**
+To generate a production-ready build:
+```bash
+npm run build
+npm run start
+```
+

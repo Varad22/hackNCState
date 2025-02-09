@@ -15,6 +15,8 @@ export default function Navbar() {
   const isLoginPage = pathname === "/login";
   const isDashboard = pathname === "/dashboard"; // Employee Dashboard
   const isVendorDashboard = pathname === "/vendor-dashboard"; // Vendor Dashboard
+  const isEmp = pathname === "/employee-dashboard"; // Vendor Dashboard
+
 
   // Logout Function
   const handleLogout = () => {
@@ -73,7 +75,7 @@ export default function Navbar() {
         {/* Right Side: Theme Toggle + Logout / Sign In */}
         <div className="hidden md:flex items-center space-x-4">
           <ThemeToggle />
-          {(isDashboard || isVendorDashboard) ? (
+          {(isDashboard || isVendorDashboard || isEmp) ? (
             <Button
               className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
               onClick={handleLogout}

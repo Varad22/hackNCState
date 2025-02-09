@@ -48,10 +48,12 @@ menu = {
   
 }
 
+import os
 import openai
+API_KEY= os.getenv("API_KEY")
 
 # Step 2: Set your OpenAI API key
-openai.api_key = "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"  # Replace with your OpenAI API key
+openai.api_key = API_KEY
 
 # Step 4: Categorize menu items into packages
 def categorize_menu(menu):
