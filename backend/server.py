@@ -6,10 +6,19 @@ from datetime import datetime
 import schedule
 import time
 import threading
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 CORS(app)
+app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_PORT"] = 587  # Use 587 for TLS (Secure)
+app.config["MAIL_USE_TLS"] = True  # Use TLS encryption
+app.config["MAIL_USE_SSL"] = False  # Must be False for TLS
+app.config["MAIL_USERNAME"] = "varadjs22@gmail.com"  # Your Gmail address
+app.config["MAIL_PASSWORD"] = "egsl ayev bbld bhrn"  # Use a Google App Password, NOT your real password
+app.config["MAIL_DEFAULT_SENDER"] = "varadjs22@gmail.com"
 
+ 
 db.connectDB()
 
 collection_dh = "dining_halls"
@@ -89,18 +98,36 @@ def employee_update_inventory():
 @app.route("/dashboard", methods=["get"])
 def dashboard():
     try:
-        response = db.get_one("dining_halls", "Hillside Dining","dining_hall_name")
+        response = db.get_one("users", "admin","username")
         data = response.get_json()
 
         if data and isinstance(data, list) and len(data) > 0:
-            return jsonify(data[0].get("records", []))
+            return data
         else:
             return jsonify({"message": "No records found"}), 404
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
 
+@app.route("/send-email", methods=["POST"])
+def send_email():
+    try:
+        data = "Test body"
+        recipient = "hacknc1@yopmail.com"
+        subject = "Test subject"
+        
 
+        if not recipient:
+            return jsonify({"error": "Recipient email is required"}), 400
+
+        msg = Message(subject=subject, recipients=[recipient], body=data)
+        mail.send(msg)
+
+        return jsonify({"message": "Email sent successfully!"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ------- XXXXX -------
 
