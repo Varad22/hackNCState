@@ -111,6 +111,23 @@ def dashboard():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/employee/dashboard", methods=["GET"])
+def employee_dashboard():
+    try:
+        response = db.get_one("users", "employee", "role")
+        data = response.get_json()
+        hall = data[0].get("dining_hall")
+        dining_details = db.get_one("dining_halls", hall, "dining_hall_name").get_json()
+        
+        if data and dining_details:
+            return {"user": data, "hall": dining_details}
+        else:
+            return jsonify({"message": "No records found"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
     
 
 @app.route("/send-email", methods=["POST"])
@@ -234,9 +251,12 @@ def get_package():
         assistant_response = response["choices"][0]["message"]["content"]
         
         return jsonify({"package_summary": assistant_response})
+        
     
     except ValueError:
         return jsonify({"error": "'preference' must be a valid integer."}), 400
+    
+
 
 
 if __name__ == '__main__':
