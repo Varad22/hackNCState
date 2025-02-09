@@ -15,9 +15,16 @@ def login():
 
 @app.route("/publish", methods=["post", "get"])
 def publish():
-    return db.add_collection("dining_halls")
+    return db.add_collection("users")
     # dbconn.insert_data("test")
     # return "SUCCESS"
+
+@app.route("/profile", methods=["POST", "GET"])
+def profile():
+    user = db.get_one("users","admin", "username")
+    return user
+
+
 
 @app.route("/dining_halls", methods=["POST", "GET"])
 def get_dining_halls():
@@ -27,7 +34,7 @@ def get_dining_halls():
 @app.route("/dashboard", methods=["get"])
 def dashboard():
     try:
-        response = db.get_one("dining_halls", "Hillside Dining")
+        response = db.get_one("dining_halls", "Hillside Dining","dining_hall_name")
         data = response.get_json()
 
         if data and isinstance(data, list) and len(data) > 0:

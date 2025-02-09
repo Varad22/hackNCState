@@ -50,10 +50,10 @@ def get_all(collection_name):
     except Exception as e:
         return jsonify({"error": str(e)})
 
-def get_one(collection_name, diningHall):
+def get_one(collection_name, value, col):
     try:
         collection = dbconn[collection_name]
-        data = list(collection.find({"dining_hall_name": diningHall}, {"_id": 0}))
+        data = list(collection.find({col: value}, {"_id": 0}))
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)})
