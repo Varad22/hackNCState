@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Trash } from "lucide-react"; // Import Trash Icon
 
 export default function VendorDashboard() {
   const [vendorData, setVendorData] = useState(null);
   const [diningHallData, setDiningHallData] = useState(null);
   const [newTotalBoxes, setNewTotalBoxes] = useState("");
+  const [addBoxes, setAddBoxes] = useState("");
   const [selectedRecordIndex, setSelectedRecordIndex] = useState(null);
   const [error, setError] = useState("");
 
@@ -17,8 +19,8 @@ export default function VendorDashboard() {
         if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`);
         const data = await response.json();
 
-        if (data.user?.length > 0) setVendorData(data.user[0]); // Vendor details
-        if (data.hall?.length > 0) setDiningHallData(data.hall[0]); // Dining hall details
+        if (data.user?.length > 0) setVendorData(data.user[0]);
+        if (data.hall?.length > 0) setDiningHallData(data.hall[0]);
 
         console.log("Vendor Data:", data.user[0]);
         console.log("Dining Hall Data:", data.hall[0]);
@@ -33,7 +35,7 @@ export default function VendorDashboard() {
   const lastRecord =
     diningHallData?.records?.length > 0
       ? diningHallData.records[diningHallData.records.length - 1]
-      : {}; // Get the last record safely
+      : {};
 
   const handleUpdateTotalBoxes = async (e) => {
     e.preventDefault();
@@ -56,25 +58,52 @@ export default function VendorDashboard() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("API Error:", errorData.error);
         alert(`Error: ${errorData.error}`);
         return;
       }
 
-      const result = await response.json();
-      if (result.message === "Total boxes updated successfully") {
-        setDiningHallData((prev) => ({
-          ...prev,
-          records: prev.records.map((record, index) =>
-            index === prev.records.length - 1 ? { ...record, total_boxes: Number(newTotalBoxes) } : record
-          ),
-        }));
-        setNewTotalBoxes(""); // Clear input field
-      } else {
-        alert(result.error);
-      }
+      setDiningHallData((prev) => ({
+        ...prev,
+        records: prev.records.map((record, index) =>
+          index === prev.records.length - 1 ? { ...record, total_boxes: Number(newTotalBoxes) } : record
+        ),
+      }));
+      setNewTotalBoxes("");
     } catch (err) {
       alert(`Error updating total boxes: ${err.message}`);
+    }
+  };
+
+  const handleResetDonatedBoxes = async () => {
+    if (!confirm("Are you sure you want to reset today's donated boxes? This cannot be undone.")) return;
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/vendor/update_inventory", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dining_hall_name: vendorData.dining_hall,
+          total_boxes: lastRecord.total_boxes,
+          donated_boxes: 0,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error}`);
+        return;
+      }
+
+      setDiningHallData((prev) => ({
+        ...prev,
+        records: prev.records.map((record, index) =>
+          index === prev.records.length - 1 ? { ...record, donated_boxes: 0 } : record
+        ),
+      }));
+    } catch (err) {
+      alert(`Error resetting donated boxes: ${err.message}`);
     }
   };
 
@@ -99,16 +128,24 @@ export default function VendorDashboard() {
           {/* Boxes Info */}
           <div className="space-y-2">
             <p className="text-lg text-gray-800 dark:text-gray-200">
-              Total Boxes: <span className="font-bold">{lastRecord.total_boxes ?? 0}</span>
+              <span className="font-semibold">Total Boxes:</span> {lastRecord.total_boxes ?? 0}
             </p>
+            <div className="flex items-center justify-between">
+              <p className="text-lg text-gray-800 dark:text-gray-200">
+                <span className="font-semibold">Donated Boxes:</span> {lastRecord.donated_boxes ?? 0}
+              </p>
+              <Button
+                variant="destructive"
+                className="flex items-center space-x-2"
+                onClick={handleResetDonatedBoxes}
+              >
+                <Trash className="w-5 h-5" />
+                <span>Clear Donations</span>
+              </Button>
+            </div>
             <p className="text-lg text-gray-800 dark:text-gray-200">
-              Donated Boxes: <span className="font-bold">{lastRecord.donated_boxes ?? 0}</span>
-            </p>
-            <p className="text-lg text-gray-800 dark:text-gray-200">
-              Available Boxes:{" "}
-              <span className="font-bold">
-                {Math.max((lastRecord.total_boxes ?? 0) - (lastRecord.donated_boxes ?? 0), 0)}
-              </span>
+              <span className="font-semibold">Available Boxes:</span>{" "}
+              {Math.max((lastRecord.total_boxes ?? 0) - (lastRecord.donated_boxes ?? 0), 0)}
             </p>
           </div>
 
@@ -123,10 +160,7 @@ export default function VendorDashboard() {
                 className="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:text-white"
                 required
               />
-              <Button
-                type="submit"
-                className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-              >
+              <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
                 Update Total Boxes
               </Button>
             </div>
@@ -148,32 +182,6 @@ export default function VendorDashboard() {
                 </option>
               ))}
             </select>
-
-            {/* Display selected record details */}
-            {selectedRecordIndex !== null && diningHallData.records?.[selectedRecordIndex] && (
-              <div className="mt-4 p-4 bg-gray-200 dark:bg-gray-700 rounded-md">
-                <p className="text-lg text-gray-900 dark:text-white">
-                  <span className="font-bold">Date:</span>{" "}
-                  {diningHallData.records[selectedRecordIndex].date}
-                </p>
-                <p className="text-lg text-gray-900 dark:text-white">
-                  <span className="font-bold">Total Boxes:</span>{" "}
-                  {diningHallData.records[selectedRecordIndex].total_boxes}
-                </p>
-                <p className="text-lg text-gray-900 dark:text-white">
-                  <span className="font-bold">Donated Boxes:</span>{" "}
-                  {diningHallData.records[selectedRecordIndex].donated_boxes}
-                </p>
-                <p className="text-lg text-gray-900 dark:text-white">
-                  <span className="font-bold">Available Boxes:</span>{" "}
-                  {Math.max(
-                    diningHallData.records[selectedRecordIndex].total_boxes -
-                      diningHallData.records[selectedRecordIndex].donated_boxes,
-                    0
-                  )}
-                </p>
-              </div>
-            )}
           </div>
         </div>
       ) : (
