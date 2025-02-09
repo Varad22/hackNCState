@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
 
           {/* Footer (Always Present) */}
           <footer className="p-4 text-center border-t bg-gray-100 dark:bg-gray-800 dark:text-white">
-            &copy; {new Date().getFullYear()} NourishNow. All rights reserved.
+            &copy; {new Date().getFullYear()} Pack the Feed. All rights reserved.
           </footer>
         </ThemeContextProvider>
       </body>

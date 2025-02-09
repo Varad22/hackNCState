@@ -25,13 +25,24 @@ export default function Navbar() {
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-white dark:bg-gray-800 shadow-md">
       <div className="flex items-center justify-between max-w-7xl mx-auto p-4">
-        {/* Left: Logo */}
-        <h1
-          className="text-xl font-bold dark:text-white cursor-pointer"
-          onClick={() => router.push("/")}
-        >
-          NourishNow
-        </h1>
+        {/* Logo and Brand Name */}
+        <div className="flex items-center space-x-4">
+          {/* Logo Circle */}
+          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+            <img
+              src="/logo.png" // Your logo image in the public/ folder
+              alt="Logo"
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          </div>
+          {/* Brand Name */}
+          <h1
+            className="text-xl font-bold dark:text-white cursor-pointer"
+            onClick={() => router.push("/")}
+          >
+            Pack The Feed
+          </h1>
+        </div>
 
         {/* Show Navigation Links ONLY on Landing Page */}
         {isLandingPage && (
@@ -40,13 +51,13 @@ export default function Navbar() {
               onClick={() => document.getElementById("panel").scrollIntoView({ behavior: "smooth" })}
               className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition"
             >
-              Panel
+              Mystical Panels
             </button>
             <button
               onClick={() => document.getElementById("blogs").scrollIntoView({ behavior: "smooth" })}
               className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition"
             >
-              Blogs
+              Chronicles
             </button>
             <button
               onClick={() =>
@@ -54,7 +65,7 @@ export default function Navbar() {
               }
               className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition"
             >
-              Testimonials
+              Tales of Gratitude
             </button>
           </nav>
         )}
@@ -106,7 +117,7 @@ export default function Navbar() {
               }}
               className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition"
             >
-              Panel
+              Mystical Panels
             </button>
             <button
               onClick={() => {
@@ -115,7 +126,7 @@ export default function Navbar() {
               }}
               className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition"
             >
-              Blogs
+              Chronicles
             </button>
             <button
               onClick={() => {
@@ -124,7 +135,7 @@ export default function Navbar() {
               }}
               className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition"
             >
-              Testimonials
+              Tales of Gratitude
             </button>
             <ThemeToggle />
           </div>

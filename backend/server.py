@@ -76,8 +76,14 @@ def vendor_update_inventory():
 def predict():
     try:
         # data = request.get_json()
-        match_location_NC = [1,0,0,1]
-        is_weekend = [1,1,0,0]
+        match_location_NC = [1,1,1,0]
+        is_weekend = [0,1,0,1]
+        dates = [
+            "Feb 12, 2025",
+            "Feb 15, 2025",
+            "Feb 19, 2025",
+            "Feb 28, 2025"
+        ]
         
         # Load the trained model
         model = joblib.load('optimized_model.pkl')
@@ -86,7 +92,7 @@ def predict():
         for i in range(len(is_weekend)):
             prediction = model.predict([[match_location_NC[i], is_weekend[i]]])[0]
             predictions.append(prediction)
-        return jsonify({"predicted_total_boxes": predictions})
+        return jsonify({"predicted_total_boxes": predictions, "dates": dates})
     except Exception as e:
         return jsonify({"error": str(e)})
 

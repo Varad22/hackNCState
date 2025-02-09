@@ -11,6 +11,8 @@ export default function VendorDashboard() {
   const [addBoxes, setAddBoxes] = useState("");
   const [selectedRecordIndex, setSelectedRecordIndex] = useState(null);
   const [error, setError] = useState("");
+  const [predictedBoxes, setPredictedBoxes] = useState([]);
+  const [dates, setDates] = useState([]);
 
   const fetchVendorData = async () => {
     try {
@@ -27,15 +29,32 @@ export default function VendorDashboard() {
 
   useEffect(() => {
     fetchVendorData();
+    fetchPredictions();
   }, []);
 
-  // Get the last record (for main display)
+  const fetchPredictions = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:5000/predict");
+      if (!response.ok) throw new Error("Failed to fetch prophecies");
+
+      const data = await response.json();
+
+      if (data.predicted_total_boxes && data.dates) {
+        setPredictedBoxes(data.predicted_total_boxes);
+        setDates(data.dates);
+      } else {
+        console.error("Invalid response structure:", data);
+      }
+    } catch (err) {
+      console.error("Error fetching prophecies:", err);
+    }
+  };
+
   const lastRecord =
     diningHallData?.records?.length > 0
       ? diningHallData.records[diningHallData.records.length - 1]
       : {};
 
-  // Get the selected record from the dropdown (for history display)
   const selectedRecord =
     selectedRecordIndex !== null && diningHallData?.records?.[selectedRecordIndex]
       ? diningHallData.records[selectedRecordIndex]
@@ -44,7 +63,7 @@ export default function VendorDashboard() {
   const handleUpdateTotalBoxes = async (e) => {
     e.preventDefault();
     if (isNaN(newTotalBoxes) || Number(newTotalBoxes) < 0) {
-      alert("Please enter a valid number.");
+      alert("Enter a valid number, Keeper.");
       return;
     }
 
@@ -60,11 +79,7 @@ export default function VendorDashboard() {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.error}`);
-        return;
-      }
+      if (!response.ok) throw new Error("Failed to update provisions.");
 
       setDiningHallData((prev) => ({
         ...prev,
@@ -74,14 +89,14 @@ export default function VendorDashboard() {
       }));
       setNewTotalBoxes("");
     } catch (err) {
-      alert(`Error updating total boxes: ${err.message}`);
+      alert(`Error: ${err.message}`);
     }
   };
 
   const handleIncrementTotalBoxes = async (e) => {
     e.preventDefault();
     if (isNaN(addBoxes) || Number(addBoxes) < 0) {
-      alert("Please enter a valid number.");
+      alert("Enter a valid number, Keeper.");
       return;
     }
 
@@ -101,11 +116,7 @@ export default function VendorDashboard() {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.error}`);
-        return;
-      }
+      if (!response.ok) throw new Error("Failed to increase provisions.");
 
       setDiningHallData((prev) => ({
         ...prev,
@@ -115,13 +126,13 @@ export default function VendorDashboard() {
       }));
       setAddBoxes("");
     } catch (err) {
-      alert(`Error updating total boxes: ${err.message}`);
+      alert(`Error: ${err.message}`);
     }
   };
 
   const handleResetDonatedBoxes = async () => {
-    if (!confirm("Are you sure you want to reset today's donated boxes? This cannot be undone.")) return;
-  
+    if (!confirm("Are you sure you wish to revoke today’s bestowal?")) return;
+
     try {
       const response = await fetch("http://127.0.0.1:5000/vendor/update_inventory", {
         method: "POST",
@@ -132,37 +143,25 @@ export default function VendorDashboard() {
           donated_boxes: 0,
         }),
       });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.error}`);
-        return;
-      }
-  
-      const result = await response.json();
-      console.log("Reset Response:", result); // Debugging
-  
-      // ✅ Directly update the state to reflect the new data immediately
+
+      if (!response.ok) throw new Error("Failed to reset bestowed provisions.");
+
       setDiningHallData((prev) => ({
         ...prev,
         records: prev.records.map((record, index) =>
           index === prev.records.length - 1 ? { ...record, donated_boxes: 0 } : record
         ),
       }));
-  
-      // ✅ Ensure fresh data is fetched after state update
+
       await fetchVendorData();
     } catch (err) {
-      alert(`Error resetting donated boxes: ${err.message}`);
+      alert(`Error: ${err.message}`);
     }
   };
-  
-  
-  
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
-      <h1 className="text-4xl font-bold text-center mb-10 dark:text-white">Vendor Dashboard</h1>
+      <h1 className="text-4xl font-bold text-center mb-10 dark:text-white">Vendor’s Guildhall</h1>
 
       {error ? (
         <p className="text-center text-red-500">{error}</p>
@@ -170,14 +169,14 @@ export default function VendorDashboard() {
         <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
           <h2 className="text-2xl font-bold dark:text-white mb-4">{vendorData?.dining_hall}</h2>
 
-          {/* Last Record Info (Main Display) */}
+          {/* Last Record Info */}
           <div className="space-y-2">
             <p className="text-lg text-gray-800 dark:text-gray-200">
-              <span className="font-semibold">Total Boxes:</span> {lastRecord.total_boxes ?? 0}
+              <span className="font-semibold">Total Provisions:</span> {lastRecord.total_boxes ?? 0}
             </p>
             <div className="flex items-center justify-between">
               <p className="text-lg text-gray-800 dark:text-gray-200">
-                <span className="font-semibold">Donated Boxes:</span> {lastRecord.donated_boxes ?? 0}
+                <span className="font-semibold">Provisions Bestowed:</span> {lastRecord.donated_boxes ?? 0}
               </p>
               {/* <Button
                 variant="destructive"
@@ -185,53 +184,56 @@ export default function VendorDashboard() {
                 onClick={handleResetDonatedBoxes}
               >
                 <Trash className="w-5 h-5" />
-                <span>Clear Donations</span>
+                <span>Revoke Bestowal</span>
               </Button> */}
             </div>
             <p className="text-lg text-gray-800 dark:text-gray-200">
-              <span className="font-semibold">Available Boxes:</span>{" "}
-              {Math.max((lastRecord.total_boxes ?? 0) - (lastRecord.donated_boxes ?? 0), 0)}
+              <span className="font-semibold">Provisions Remaining:</span> {Math.max((lastRecord.total_boxes ?? 0) - (lastRecord.donated_boxes ?? 0), 0)}
             </p>
           </div>
 
-          {/* Update & Increment Total Boxes */}
+          {/* Update Total Provisions */}
           <form onSubmit={handleUpdateTotalBoxes} className="mt-6">
             <div className="flex items-center space-x-4">
               <input
                 type="number"
                 value={newTotalBoxes}
                 onChange={(e) => setNewTotalBoxes(e.target.value)}
-                placeholder="Enter new total boxes"
+                placeholder="Enter updated total provisions"
                 className="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:text-white"
                 required
               />
               <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">
-                Update Total Boxes
+                Update Provisions
               </Button>
             </div>
           </form>
 
+          {/* Increment Provisions */}
           <form onSubmit={handleIncrementTotalBoxes} className="mt-6">
             <div className="flex items-center space-x-4">
               <input
                 type="number"
                 value={addBoxes}
                 onChange={(e) => setAddBoxes(e.target.value)}
-                placeholder="Add boxes to current total"
+                placeholder="Add provisions"
                 className="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:text-white"
                 required
               />
               <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">
-                Add Boxes
+                Increase Provisions
               </Button>
             </div>
           </form>
 
-          {/* Dropdown for History */}
+          {/* Chronicles of the Keep */}
           <div className="mt-6">
-            <label className="block text-lg font-bold dark:text-white mb-2">View Past Records:</label>
-            <select onChange={(e) => setSelectedRecordIndex(Number(e.target.value))} className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white">
-              <option value="">Select a Date</option>
+            <label className="block text-lg font-bold dark:text-white mb-2">Chronicles of the Keep:</label>
+            <select
+              onChange={(e) => setSelectedRecordIndex(Number(e.target.value))}
+              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
+            >
+              <option value="">Summon a Chronicle</option>
               {diningHallData.records?.map((record, index) => (
                 <option key={index} value={index}>{record.date}</option>
               ))}
@@ -245,17 +247,36 @@ export default function VendorDashboard() {
                 <span className="font-bold">Date:</span> {selectedRecord.date}
               </p>
               <p className="text-lg text-gray-900 dark:text-white">
-                <span className="font-bold">Total Boxes:</span> {selectedRecord.total_boxes ?? 0}
+                <span className="font-bold">Total Provisions:</span> {selectedRecord.total_boxes ?? 0}
               </p>
               <p className="text-lg text-gray-900 dark:text-white">
-                <span className="font-bold">Donated Boxes:</span> {selectedRecord.donated_boxes ?? 0}
+                <span className="font-bold">Provisions Bestowed:</span> {selectedRecord.donated_boxes ?? 0}
               </p>
               <p className="text-lg text-gray-900 dark:text-white">
-                <span className="font-bold">Available Boxes:</span>{" "}
-                {Math.max((selectedRecord.total_boxes ?? 0) - (selectedRecord.donated_boxes ?? 0), 0)}
+                <span className="font-bold">Provisions Remaining:</span> {Math.max((selectedRecord.total_boxes ?? 0) - (selectedRecord.donated_boxes ?? 0), 0)}
               </p>
             </div>
           )}
+
+          {/* Prophecy of Provisions */}
+          <div className="mt-6 bg-blue-100 dark:bg-blue-900 p-6 rounded-lg shadow-lg">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Prophecy of Provisions</h3>
+            <p className="text-gray-700 dark:text-gray-300 mt-2">
+              Divined supplies for the feasting days ahead.
+            </p>
+
+            <div className="mt-4">
+              {predictedBoxes.length > 0 ? (
+                predictedBoxes.map((prediction, index) => (
+                  <p key={index} className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    {dates[index]}: {parseFloat(prediction).toFixed(2)} provisions
+                  </p>
+                ))
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400">Prophecies loading...</p>
+              )}
+            </div>
+          </div>
         </div>
       ) : null}
     </div>
