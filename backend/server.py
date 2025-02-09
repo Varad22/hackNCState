@@ -95,14 +95,15 @@ def employee_update_inventory():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/dashboard", methods=["get"])
+@app.route("/vendor/dashboard", methods=["get"])
 def dashboard():
     try:
         response = db.get_one("users", "admin","username")
         data = response.get_json()
-
-        if data and isinstance(data, list) and len(data) > 0:
-            return data
+        hall = data[0].get("dining_hall")
+        dining_details=db.get_one("dining_halls", hall,"dining_hall_name").get_json()
+        if data and dining_details:
+            return {"user":data, "hall":dining_details}
         else:
             return jsonify({"message": "No records found"}), 404
 
