@@ -7,6 +7,8 @@ import schedule
 import time
 import threading
 from flask_mail import Mail, Message
+import openai
+from chatgpt import menu, categorize_menu, generate_summary
 
 app = Flask(__name__)
 CORS(app)
@@ -164,6 +166,78 @@ def run_scheduler():
 
 scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
 scheduler_thread.start()
+
+
+@app.route('/meal_contents', methods=['POST'])
+def get_package():
+    
+    data = request.get_json()
+    
+    if not data or 'preference' not in data:
+        return jsonify({"error": "Invalid input. Please provide a 'preference' field."}), 400
+    
+    preference_map = {
+        1: "Vegan",
+        2: "Vegetarian",
+        3: "Gluten-Free",
+        4: "Meat"
+    }
+    
+    try:
+        # Get user preference as an integer
+        user_choice = int(data['preference'])
+        
+        if user_choice not in preference_map:
+            return jsonify({"error": f"Invalid preference. Choose a number between {list(preference_map.keys())}."}), 400
+        
+        # Map user choice to package name
+        selected_package = preference_map[user_choice]
+        categorized_menu = categorize_menu(menu)
+
+        # Generate summary for the chosen package
+        summary = generate_summary(selected_package, categorized_menu)
+        
+        # Use OpenAI API for enhanced response (optional)
+        system_message = """
+        You are a nutritionist assistant. We offer four meal packages: Vegan, Vegetarian, Gluten-Free, and Meat.
+        
+        Each package is tailored to specific dietary preferences. The package includes items from leftover dining hall food and may vary.
+        
+        - Vegan: Includes only vegan-tagged items.
+        - Vegetarian: Includes only vegetarian-tagged items.
+        - Gluten-Free: Includes all items except those with gluten allergens.
+        - Meat (Anything Meal): Includes all menu items.
+        
+        Ask the user about their dietary restrictions and suggest a suitable package. Provide a short summary of what might be included in their chosen package from the menu.
+
+        Reference exact menu items from categories. No brekafast or lunch option. Just from menu take variety of diffrent items 
+    
+        The package are made from food items left from the dining hall so the package may any of items in menu which were reamaining. Frame the answer as such. 
+
+        Be specific to menu. 
+
+        Be with short include 4-5 diverse items from summary. that it. tell them it may or may not have these items in package 
+
+
+        """
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": f"I chose the {selected_package} package. Can you tell me more about it?"},
+                {"role": "assistant", "content": summary}
+            ]
+        )
+        
+        # Return ChatGPT's response
+        assistant_response = response["choices"][0]["message"]["content"]
+        
+        return jsonify({"package_summary": assistant_response})
+    
+    except ValueError:
+        return jsonify({"error": "'preference' must be a valid integer."}), 400
+
 
 if __name__ == '__main__':
     app.run(debug=True)
