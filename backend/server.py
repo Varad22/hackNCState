@@ -235,6 +235,8 @@ def get_package():
 
         Be with short include 4-5 diverse items from summary. that it. tell them it may or may not have these items in package 
 
+        Keep it under 50 words
+
 
         """
         

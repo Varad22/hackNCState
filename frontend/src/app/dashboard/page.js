@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { getDiningHalls } from "@/lib/api";
 import dynamic from "next/dynamic";
+import { motion } from "framer-motion";
+
 import {
   Dialog,
   DialogTrigger,
@@ -25,6 +27,43 @@ export default function DashboardPage() {
   
   const dietaryOptions = ["Vegan", "Vegetarian", "Halal", "Gluten-Free", "No Preference"];
 
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    { sender: "bot", text: "🍽️ Welcome! Select a meal preference:\n\n1️⃣ Vegan\n2️⃣ Vegetarian\n3️⃣ Gluten-Free\n4️⃣ Meat" }
+  ]);
+  const [loadingResponse, setLoadingResponse] = useState(false);
+
+  const sendMessage = async (message) => {
+    const preference = parseInt(message); // Ensure it's an integer
+  
+    if (![1, 2, 3, 4].includes(preference)) {
+      setChatMessages((prev) => [...prev, { sender: "bot", text: "Invalid choice. Please select 1, 2, 3, or 4." }]);
+      return;
+    }
+  
+    setChatMessages((prev) => [...prev, { sender: "user", text: `Selected: ${message}` }]);
+    setLoadingResponse(true);
+  
+    try {
+      const response = await fetch("http://127.0.0.1:5000/meal_contents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preference }), // Ensure the JSON body is correctly structured
+      });
+  
+      if (!response.ok) throw new Error("Failed to fetch meal package.");
+  
+      const data = await response.json();
+      setChatMessages((prev) => [...prev, { sender: "bot", text: data.package_summary || "No details available." }]);
+    } catch (error) {
+      setChatMessages((prev) => [...prev, { sender: "bot", text: "Error fetching meal details. Please try again." }]);
+    }
+  
+    setLoadingResponse(false);
+  };
+  
+
+
   useEffect(() => {
     const fetchDiningHalls = async () => {
       const data = await getDiningHalls();
@@ -43,19 +82,44 @@ export default function DashboardPage() {
   };
 
   // Handle Subscription Confirmation
-  const handleSubscribe = () => {
+  const handleSubscribe = async () => {
     if (!selectedPreference) {
       alert("Please select a dietary preference.");
       return;
     }
-
-    setSubscriptions((prev) => ({
-      ...prev,
-      [selectedHall.dining_hall_name]: selectedPreference,
-    }));
-
-    setSelectedHall(null); // Close modal
+  
+    try {
+      const response = await fetch("http://127.0.0.1:5000/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          recipient: "hacknc1@yopmail.com", // Replace with dynamic user email if available
+          subject: `Subscription Alert - ${selectedHall.dining_hall_name}`,
+          data: `User subscribed to ${selectedHall.dining_hall_name} with preference: ${selectedPreference}`,
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(`Error sending notification: ${errorData.error}`);
+        return;
+      }
+  
+      setSubscriptions((prev) => ({
+        ...prev,
+        [selectedHall.dining_hall_name]: selectedPreference,
+      }));
+  
+      setSelectedHall(null); // Close modal
+  
+      alert("You have been successfully subscribed!");
+    } catch (err) {
+      alert(`Error subscribing: ${err.message}`);
+    }
   };
+  
 
   // Handle Cancel Notification
   const handleCancelSubscription = (hallName) => {
@@ -172,6 +236,37 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Chatbot */}
+      <div className="fixed bottom-6 right-6">
+        {!showChat ? (
+          <Button className="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700" onClick={() => setShowChat(true)}>
+            💬 Chat
+          </Button>
+        ) : (
+          <motion.div className="bg-white dark:bg-gray-900 w-[400px] h-[350px] p-4 rounded-lg shadow-lg border border-gray-300 dark:border-gray-700">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Meal Chatbot</h3>
+              <button className="text-red-500 font-bold" onClick={() => setShowChat(false)}>✖</button>
+            </div>
+            <div className="h-52 overflow-y-auto p-2 space-y-2 border-b border-gray-300 dark:border-gray-700">
+              {chatMessages.map((msg, index) => (
+                <p key={index} className={`p-2 rounded-md ${msg.sender === "bot" ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white" : "bg-blue-600 text-white"}`}>
+                  {msg.text}
+                </p>
+              ))}
+            </div>
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 px-4">
+              {[1, 2, 3, 4].map((num) => (
+                <Button key={num} className="bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-white" onClick={() => sendMessage(num.toString())}>
+                  {num}
+                </Button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </div>
+
     </div>
   );
 }

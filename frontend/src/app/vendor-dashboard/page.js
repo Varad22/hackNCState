@@ -12,30 +12,34 @@ export default function VendorDashboard() {
   const [selectedRecordIndex, setSelectedRecordIndex] = useState(null);
   const [error, setError] = useState("");
 
+  const fetchVendorData = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:5000/vendor/dashboard");
+      if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`);
+      const data = await response.json();
+
+      if (data.user?.length > 0) setVendorData(data.user[0]);
+      if (data.hall?.length > 0) setDiningHallData(data.hall[0]);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   useEffect(() => {
-    const fetchVendorData = async () => {
-      try {
-        const response = await fetch("http://127.0.0.1:5000/vendor/dashboard");
-        if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`);
-        const data = await response.json();
-
-        if (data.user?.length > 0) setVendorData(data.user[0]);
-        if (data.hall?.length > 0) setDiningHallData(data.hall[0]);
-
-        console.log("Vendor Data:", data.user[0]);
-        console.log("Dining Hall Data:", data.hall[0]);
-      } catch (err) {
-        setError(err.message);
-      }
-    };
-
     fetchVendorData();
   }, []);
 
+  // Get the last record (for main display)
   const lastRecord =
     diningHallData?.records?.length > 0
       ? diningHallData.records[diningHallData.records.length - 1]
       : {};
+
+  // Get the selected record from the dropdown (for history display)
+  const selectedRecord =
+    selectedRecordIndex !== null && diningHallData?.records?.[selectedRecordIndex]
+      ? diningHallData.records[selectedRecordIndex]
+      : null;
 
   const handleUpdateTotalBoxes = async (e) => {
     e.preventDefault();
@@ -74,8 +78,16 @@ export default function VendorDashboard() {
     }
   };
 
-  const handleResetDonatedBoxes = async () => {
-    if (!confirm("Are you sure you want to reset today's donated boxes? This cannot be undone.")) return;
+  const handleIncrementTotalBoxes = async (e) => {
+    e.preventDefault();
+    if (isNaN(addBoxes) || Number(addBoxes) < 0) {
+      alert("Please enter a valid number.");
+      return;
+    }
+
+    const incrementValue = Number(addBoxes);
+    const currentTotal = lastRecord.total_boxes ?? 0;
+    const newTotal = currentTotal + incrementValue;
 
     try {
       const response = await fetch("http://127.0.0.1:5000/vendor/update_inventory", {
@@ -85,8 +97,7 @@ export default function VendorDashboard() {
         },
         body: JSON.stringify({
           dining_hall_name: vendorData.dining_hall,
-          total_boxes: lastRecord.total_boxes,
-          donated_boxes: 0,
+          total_boxes: newTotal,
         }),
       });
 
@@ -99,13 +110,55 @@ export default function VendorDashboard() {
       setDiningHallData((prev) => ({
         ...prev,
         records: prev.records.map((record, index) =>
+          index === prev.records.length - 1 ? { ...record, total_boxes: newTotal } : record
+        ),
+      }));
+      setAddBoxes("");
+    } catch (err) {
+      alert(`Error updating total boxes: ${err.message}`);
+    }
+  };
+
+  const handleResetDonatedBoxes = async () => {
+    if (!confirm("Are you sure you want to reset today's donated boxes? This cannot be undone.")) return;
+  
+    try {
+      const response = await fetch("http://127.0.0.1:5000/vendor/update_inventory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dining_hall_name: vendorData.dining_hall,
+          total_boxes: lastRecord.total_boxes,
+          donated_boxes: 0,
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error}`);
+        return;
+      }
+  
+      const result = await response.json();
+      console.log("Reset Response:", result); // Debugging
+  
+      // ✅ Directly update the state to reflect the new data immediately
+      setDiningHallData((prev) => ({
+        ...prev,
+        records: prev.records.map((record, index) =>
           index === prev.records.length - 1 ? { ...record, donated_boxes: 0 } : record
         ),
       }));
+  
+      // ✅ Ensure fresh data is fetched after state update
+      await fetchVendorData();
     } catch (err) {
       alert(`Error resetting donated boxes: ${err.message}`);
     }
   };
+  
+  
+  
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
@@ -115,17 +168,9 @@ export default function VendorDashboard() {
         <p className="text-center text-red-500">{error}</p>
       ) : vendorData && diningHallData ? (
         <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-bold dark:text-white mb-4">
-            {vendorData?.dining_hall || "Select a Vendor"}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-2">
-            Email: {vendorData?.email || "Not Available"}
-          </p>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Username: {vendorData?.username || "Not Available"}
-          </p>
+          <h2 className="text-2xl font-bold dark:text-white mb-4">{vendorData?.dining_hall}</h2>
 
-          {/* Boxes Info */}
+          {/* Last Record Info (Main Display) */}
           <div className="space-y-2">
             <p className="text-lg text-gray-800 dark:text-gray-200">
               <span className="font-semibold">Total Boxes:</span> {lastRecord.total_boxes ?? 0}
@@ -134,14 +179,14 @@ export default function VendorDashboard() {
               <p className="text-lg text-gray-800 dark:text-gray-200">
                 <span className="font-semibold">Donated Boxes:</span> {lastRecord.donated_boxes ?? 0}
               </p>
-              <Button
+              {/* <Button
                 variant="destructive"
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md"
                 onClick={handleResetDonatedBoxes}
               >
                 <Trash className="w-5 h-5" />
                 <span>Clear Donations</span>
-              </Button>
+              </Button> */}
             </div>
             <p className="text-lg text-gray-800 dark:text-gray-200">
               <span className="font-semibold">Available Boxes:</span>{" "}
@@ -149,7 +194,7 @@ export default function VendorDashboard() {
             </p>
           </div>
 
-          {/* Update Total Boxes Form */}
+          {/* Update & Increment Total Boxes */}
           <form onSubmit={handleUpdateTotalBoxes} className="mt-6">
             <div className="flex items-center space-x-4">
               <input
@@ -160,33 +205,59 @@ export default function VendorDashboard() {
                 className="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:text-white"
                 required
               />
-              <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
+              <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">
                 Update Total Boxes
               </Button>
             </div>
           </form>
 
-          {/* Dropdown to View All Records */}
+          <form onSubmit={handleIncrementTotalBoxes} className="mt-6">
+            <div className="flex items-center space-x-4">
+              <input
+                type="number"
+                value={addBoxes}
+                onChange={(e) => setAddBoxes(e.target.value)}
+                placeholder="Add boxes to current total"
+                className="w-full px-4 py-2 border rounded-md dark:bg-gray-700 dark:text-white"
+                required
+              />
+              <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">
+                Add Boxes
+              </Button>
+            </div>
+          </form>
+
+          {/* Dropdown for History */}
           <div className="mt-6">
-            <label className="block text-lg font-bold dark:text-white mb-2">
-              View Past Inventory Records:
-            </label>
-            <select
-              onChange={(e) => setSelectedRecordIndex(Number(e.target.value))}
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
-            >
+            <label className="block text-lg font-bold dark:text-white mb-2">View Past Records:</label>
+            <select onChange={(e) => setSelectedRecordIndex(Number(e.target.value))} className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white">
               <option value="">Select a Date</option>
               {diningHallData.records?.map((record, index) => (
-                <option key={index} value={index}>
-                  {record.date}
-                </option>
+                <option key={index} value={index}>{record.date}</option>
               ))}
             </select>
           </div>
+
+          {/* Selected Record Details */}
+          {selectedRecord && (
+            <div className="mt-4 p-4 bg-gray-200 dark:bg-gray-700 rounded-md">
+              <p className="text-lg text-gray-900 dark:text-white">
+                <span className="font-bold">Date:</span> {selectedRecord.date}
+              </p>
+              <p className="text-lg text-gray-900 dark:text-white">
+                <span className="font-bold">Total Boxes:</span> {selectedRecord.total_boxes ?? 0}
+              </p>
+              <p className="text-lg text-gray-900 dark:text-white">
+                <span className="font-bold">Donated Boxes:</span> {selectedRecord.donated_boxes ?? 0}
+              </p>
+              <p className="text-lg text-gray-900 dark:text-white">
+                <span className="font-bold">Available Boxes:</span>{" "}
+                {Math.max((selectedRecord.total_boxes ?? 0) - (selectedRecord.donated_boxes ?? 0), 0)}
+              </p>
+            </div>
+          )}
         </div>
-      ) : (
-        <p className="text-center text-gray-700 dark:text-gray-300">Loading vendor data...</p>
-      )}
+      ) : null}
     </div>
   );
 }
