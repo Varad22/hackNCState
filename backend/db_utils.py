@@ -5,9 +5,8 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-username = os.getenv("USERNAME")
-password = os.getenv("PASSWORD")
-MONGO_URI= f"mongodb+srv://{username}:{password}@cluster0.dlweo96.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
+MONGO_URI= os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 
 def connectDB():
