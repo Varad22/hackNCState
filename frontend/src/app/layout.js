@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Button } from "@/components/ui/button";
+import ThemeContextProvider from "@/components/theme-provider";
+import Navbar from "@/components/Navbar"; // Import client-side Navbar
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,21 +22,20 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 dark:bg-gray-900 min-h-screen flex flex-col`}
       >
-        {/* Header */}
-        <header className="flex justify-between items-center p-4 border-b bg-white shadow-md">
-          <h1 className="text-xl font-bold">My App</h1>
-          <Button variant="outline">Sign In</Button>
-        </header>
+        <ThemeContextProvider>
+          {/* Fixed Header with Navbar */}
+          <Navbar />
 
-        {/* Main Content */}
-        <main className="flex-grow">{children}</main>
+          {/* Main Content */}
+          <main className="flex-grow pt-16">{children}</main>
 
-        {/* Footer */}
-        <footer className="p-4 text-center border-t bg-gray-100">
-          &copy; {new Date().getFullYear()} My App. All rights reserved.
-        </footer>
+          {/* Footer (Always Present) */}
+          <footer className="p-4 text-center border-t bg-gray-100 dark:bg-gray-800 dark:text-white">
+            &copy; {new Date().getFullYear()} NourishNow. All rights reserved.
+          </footer>
+        </ThemeContextProvider>
       </body>
     </html>
   );
