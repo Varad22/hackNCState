@@ -27,9 +27,9 @@ def add_collection(collection_name):
         return jsonify({"error": str(e)})
 
 
-def insert_data(collection_name):
+def insert_data(collection_name, data):
     try:
-        data = request.json
+        data = data
         collection = dbconn[collection_name]
         if isinstance(data, list):
             collection.insert_many(data)
@@ -46,4 +46,3 @@ def get_all(collection_name):
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)})
-
